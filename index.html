@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Top Stack Overflow Tags (%)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #f9f9fb;
+      --text: #1e1e2f;
+      --card: #ffffff;
+      --accent: #6c63ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+
+    #chart-card {
+      width: 100%;
+      max-width: 800px; /* smaller max-width */
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 280px !important; /* reduced height */
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.2rem;
+      }
+      #chart-card {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Top 10 Stack Overflow Tags (%)</h1>
+
+  <div id="chart-card">
+    <canvas id="tagsChart"></canvas>
+  </div>
+
+  <script>
+    async function fetchData() {
+      const res = await fetch("/data");
+      return await res.json();
+    }
+
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 200);
+      const g = Math.floor(Math.random() * 200);
+      const b = Math.floor(Math.random() * 200);
+      return `rgba(${r}, ${g}, ${b}, 1)`;
+    }
+
+    async function renderChart() {
+      const { years, tags, data } = await fetchData();
+
+      const datasets = tags.map(tag => ({
+        label: tag,
+        data: years.map((_, i) => data[tag][i]),
+        borderColor: getRandomColor(),
+        fill: false,
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 5
+      }));
+
+      const ctx = document.getElementById("tagsChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: years,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'circle',
+                padding: 16
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: context => `${context.dataset.label}: ${context.formattedValue}%`
+              }
+            },
+            title: {
+              display: true,
+              text: 'Tag Popularity Over Time (%)',
+              font: { size: 16 }
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          },
+          scales: {
+            y: {
+              title: {
+                display: true,
+                text: 'Percentage (%)'
+              },
+              beginAtZero: true,
+              grid: {
+                color: "rgba(0,0,0,0.05)"
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Year'
+              },
+              grid: {
+                color: "rgba(0,0,0,0.03)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    renderChart();
+  </script>
+</body>
+</html>
